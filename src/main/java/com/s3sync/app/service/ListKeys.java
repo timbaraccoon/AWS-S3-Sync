@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ListKeys {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         AWSCredentials credentials = new BasicAWSCredentials(
                 "AKIAZVYIBMMKMH74L2H6",
@@ -29,9 +29,6 @@ public class ListKeys {
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withRegion(Regions.US_EAST_1)
                 .build();
-
-        AWSS3Service awsService = new AWSS3Service(s3client);
-
 
         System.out.println("****  started here *****");
 
@@ -65,27 +62,24 @@ public class ListKeys {
             listObjectsRequest.setMarker(os.getNextMarker());
         } while (os.isTruncated());
 
+
+
         System.out.println("\nконтроль");
         System.out.println(size + " <==== кол-во элементов");
+
+        S3ObjectSummary test = os.getObjectSummaries().get(1);
+        System.out.println("\n"
+                + test.getKey() + " ** "
+                + test.getStorageClass()  + " ** "
+                + test.getETag()  + " ** "
+                + test.getSize()  + " ** "
+                + test.getLastModified()  + " ** ");
 
         /*ObjectListing objectListing = awsService.listObjects(bucketName);
 
         for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
             System.out.println(os.getKey() + " ** " + os.getLastModified() + " ** " + os.getStorageClass());
         }
-
-
-        System.out.println(objectListing.getObjectSummaries().size() + " <==== кол-во элементов");
-
-
-
-        /*
-        ObjectListing objectListing = awsService.listObjects(bucketName);
-
-        for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
-            System.out.println(os.getKey() + " ** " + os.getLastModified() + " ** " + os.getStorageClass());
-        }
-
 
         System.out.println(objectListing.getObjectSummaries().size() + " <==== кол-во элементов");
          */
