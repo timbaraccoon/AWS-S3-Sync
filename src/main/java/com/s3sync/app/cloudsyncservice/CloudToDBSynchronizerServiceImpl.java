@@ -27,33 +27,32 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     private final FileInfoRepository repository;
     private final AmazonS3 s3client;
 
-    private long REFRESH_THRESHOLD;
-    private final String bucketName = "cloudaware-test"; // "test-ruslan-bucket"; //
+    private final String accessKey = "AKIAZVYIBMMKMH74L2H6";
+    private final String secretKey = "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";
+    private final String bucketName = "test-ruslan-bucket"; //"cloudaware-test"; //
+    private final Regions region = Regions.EU_NORTH_1; //Regions.US_EAST_1; //
+    private long delayBetweenSynchronizations = TimeUnit.MINUTES.toMillis(1);
 
 
     @Autowired
     public CloudToDBSynchronizerServiceImpl(FileInfoRepository repository) {
         this.repository = repository;
         this.s3client = createS3Client();
-        REFRESH_THRESHOLD = TimeUnit.MINUTES.toMillis(1);
     }
 
     private AmazonS3 createS3Client() {
-        AWSCredentials credentials = new BasicAWSCredentials(
-                "AKIAZVYIBMMKMH74L2H6",
-                "2MmPxx8HSX/UaAVZgJ49apprE2sBf/WMbCZc8z+c"
-        );
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         return AmazonS3ClientBuilder
                 .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withRegion(Regions.US_EAST_1) // Regions.EU_NORTH_1) //
+                .withRegion(region)
                 .build();
     }
 
     @Override
     public void setSynchronizePeriod(int min) {
-        this.REFRESH_THRESHOLD = TimeUnit.MINUTES.toMillis(min);
+        this.delayBetweenSynchronizations = TimeUnit.MINUTES.toMillis(min);
     }
 
     @Override
@@ -61,10 +60,11 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     public void runRepeatingDatabaseHarmonize() {
         Runnable task = () -> {
             while (!Thread.currentThread().isInterrupted()) {
+                System.out.println("start synchronize");
                 synchronizeDataBaseFromCloud();
 
                 try {
-                    Thread.sleep(REFRESH_THRESHOLD);
+                    Thread.sleep(delayBetweenSynchronizations);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     break;

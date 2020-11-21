@@ -50,14 +50,4 @@ public class FileInfoController {
             return "api/list";
         }
     }
-
-    @GetMapping("/synchperiod")
-    public String getFilterFileInfoList(@RequestParam("synchronizePeriod") int synchronizePeriod) {
-
-        serviceSync.setSynchronizePeriod(synchronizePeriod);
-        System.out.println("refresh sync per <===================");
-
-            return "api/list";
-
-    }
 }
