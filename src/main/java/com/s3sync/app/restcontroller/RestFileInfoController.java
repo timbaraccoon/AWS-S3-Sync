@@ -5,11 +5,12 @@ import com.s3sync.app.restcontroller.requests.FilterParamsRequest;
 import com.s3sync.app.service.FileInfoFromDBService;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Api(tags = {"Rest Controller for getting info from AWS S3 Bucket"})
+@Api(tags = {"Rest Controller for getting Info from AWS S3 Bucket"})
 @RestController
 @RequestMapping("/rest")
 public class RestFileInfoController {
@@ -33,11 +34,11 @@ public class RestFileInfoController {
         String name = filterParams.getName();
         String type = filterParams.getType();
 
-        if (name.trim().isEmpty() && type.trim().isEmpty()) {
-            return service.findAll();
+        if (StringUtils.hasText(name) && StringUtils.hasText(type)) {
+            return service.searchBy(name, type);
         }
         else {
-            return service.searchBy(name, type);
+            return service.findAll();
         }
     }
 }

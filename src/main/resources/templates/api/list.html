@@ -21,26 +21,18 @@
     </p>
     <hr>
 
-<!--    <label for="validationDefault04">Synchronize every</label>-->
-<!--        <select action="#" th:action="@{/api/synchperiod}" method="GET"-->
-<!--                    class="custom-select mr-2 mb-3" id="validationDefault04" required>-->
-<!--            <option th:value="5" th:text="5 min"></option>-->
-<!--            <option th:value="30"  th:text="30 min"></option>-->
-<!--            <option th:value="60"  th:text="1 hour"></option>-->
-<!--        </select>-->
-
-    <br>
-
     <form action="#" th:action="@{/api/search}"
           method="GET" class="form-inline">
 
         <input type="search"
                name="name"
+               maxlength="100"
                placeholder="name"
                class="form-control mr-2 mb-3" />
 
         <input type="search"
                name="type"
+               maxlength="100"
                placeholder="type"
                class="form-control mr-2 mb-3" />
 

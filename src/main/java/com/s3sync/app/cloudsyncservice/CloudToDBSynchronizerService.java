@@ -4,6 +4,4 @@ public interface CloudToDBSynchronizerService {
 
     void runRepeatingDatabaseHarmonize();
 
-    void setSynchronizePeriod(int min);
-
 }

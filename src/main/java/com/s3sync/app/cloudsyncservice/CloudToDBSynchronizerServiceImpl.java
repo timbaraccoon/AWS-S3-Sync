@@ -13,14 +13,21 @@ import com.s3sync.app.dao.FileInfoRepository;
 import com.s3sync.app.entity.FileInfo;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+@EnableScheduling
 @Service
 public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerService {
 
@@ -31,7 +38,6 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     private final String secretKey = "2MmPxx8HSX/UaAVZgJ49apprE2sBf/WMbCZc8z+c";
     private final String bucketName = "test-ruslan-bucket"; // "cloudaware-test"; //
     private final Regions region = Regions.EU_NORTH_1; //Regions.US_EAST_1; //
-    private long delayBetweenSynchronizations = TimeUnit.MINUTES.toMillis(1);
 
 
     @Autowired
@@ -51,35 +57,22 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     }
 
     @Override
-    public void setSynchronizePeriod(int min) {
-        this.delayBetweenSynchronizations = TimeUnit.MINUTES.toMillis(min);
-    }
-
-    @Override
     @PostConstruct
+    @Scheduled(fixedRate = 60_000)
+    @Async
     public void runRepeatingDatabaseHarmonize() {
-        Runnable task = () -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                System.out.println("start synchronize");
-                synchronizeDataBaseFromCloud();
-
-                try {
-                    Thread.sleep(delayBetweenSynchronizations);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        };
-        new Thread(task).start();
+        synchronized (this) {
+            synchronizeDataBaseFromCloud();
+        }
     }
 
-    private void synchronizeDataBaseFromCloud() {
+    @Transactional
+    public void synchronizeDataBaseFromCloud() {
         ListObjectsRequest listObjectsRequest =
                 new ListObjectsRequest().withBucketName(bucketName);
 
-        HashSet<FileInfo> dataBaseSet = new HashSet<>(repository.findAll());
-        HashSet<FileInfo> cloudTargetSet = new HashSet<>();
+        Set<FileInfo> dataBaseSet = new HashSet<>(repository.findAll());
+        Set<FileInfo> cloudTargetSet = new HashSet<>();
 
         saveNewInfoFromCloudToDB(listObjectsRequest, dataBaseSet, cloudTargetSet);
         removeIrrelevantFromDB(dataBaseSet, cloudTargetSet);
@@ -87,8 +80,8 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
 
 
     private void saveNewInfoFromCloudToDB(ListObjectsRequest listObjectsRequest,
-                                          HashSet<FileInfo> dataBaseSet,
-                                          HashSet<FileInfo> cloudTargetSet) {
+                                          Set<FileInfo> dataBaseSet,
+                                          Set<FileInfo> cloudTargetSet) {
         ObjectListing os;
         do {
             os = s3client.listObjects(listObjectsRequest);
@@ -107,10 +100,12 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     }
 
 
-    private void removeIrrelevantFromDB(HashSet<FileInfo> dataBaseSet, HashSet<FileInfo> cloudTargetSet) {
-        dataBaseSet.stream().filter(elementInDB -> !(cloudTargetSet.contains(elementInDB)))
-                .map(FileInfo::getId)
-                .forEach(repository::deleteById);
+    private void removeIrrelevantFromDB(Set<FileInfo> dataBaseSet, Set<FileInfo> cloudTargetSet) {
+        Set<FileInfo> toDelete = dataBaseSet.stream()
+                .filter(elementInDB -> !(cloudTargetSet.contains(elementInDB)))
+                .collect(Collectors.toSet());
+
+        repository.deleteAll(toDelete);
     }
 
 
