@@ -1,7 +1,9 @@
 package com.s3sync.app.controller;
 
+import com.s3sync.app.cloudsyncservice.CloudToDBSynchronizerService;
 import com.s3sync.app.entity.FileInfo;
 import com.s3sync.app.service.FileInfoFromDBService;
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,27 +13,30 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
+@Api(tags = {"Controller for mapping info from AWS S3 Bucket to html"})
 @Controller
 @RequestMapping("/api")
 public class FileInfoController {
 
-    private final FileInfoFromDBService service;
+    private final FileInfoFromDBService serviceDB;
+    private final CloudToDBSynchronizerService serviceSync;
 
     @Autowired
-    public FileInfoController(FileInfoFromDBService service) {
-        this.service = service;
+    public FileInfoController(FileInfoFromDBService serviceDB, CloudToDBSynchronizerService serviceSync) {
+        this.serviceDB = serviceDB;
+        this.serviceSync = serviceSync;
     }
 
     @GetMapping("/list")
-    public String getListEmployees(Model model) {
-        List<FileInfo> fileInfoList = service.findAll();
+    public String getFileInfoList(Model model) {
+        List<FileInfo> fileInfoList = serviceDB.findAll();
         model.addAttribute("fileInfoList", fileInfoList);
 
         return "api/list";
     }
 
     @GetMapping("/search")
-    public String search(@RequestParam("name") String name,
+    public String getFilterFileInfoList(@RequestParam("name") String name,
                          @RequestParam("type") String type,
                          Model theModel) {
 
@@ -39,10 +44,20 @@ public class FileInfoController {
             return "redirect:/api/list";
         }
         else {
-            List<FileInfo> filterFileInfoList = service.searchBy(name, type);
+            List<FileInfo> filterFileInfoList = serviceDB.searchBy(name, type);
             theModel.addAttribute("fileInfoList", filterFileInfoList);
 
             return "api/list";
         }
+    }
+
+    @GetMapping("/synchperiod")
+    public String getFilterFileInfoList(@RequestParam("synchronizePeriod") int synchronizePeriod) {
+
+        serviceSync.setSynchronizePeriod(synchronizePeriod);
+        System.out.println("refresh sync per <===================");
+
+            return "api/list";
+
     }
 }

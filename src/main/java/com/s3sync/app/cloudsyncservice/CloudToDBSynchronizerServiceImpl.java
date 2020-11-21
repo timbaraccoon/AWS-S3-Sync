@@ -27,15 +27,15 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     private final FileInfoRepository repository;
     private final AmazonS3 s3client;
 
-    // TODO change threshold
-    private static final long REFRESH_THRESHOLD = TimeUnit.MINUTES.toMillis(1);
-    private static final String bucketName = "cloudaware-test";
+    private long REFRESH_THRESHOLD;
+    private static final String bucketName = "cloudaware-test"; // "test-ruslan-bucket"; //
 
 
     @Autowired
     public CloudToDBSynchronizerServiceImpl(FileInfoRepository repository) {
         this.repository = repository;
         this.s3client = createS3Client();
+        REFRESH_THRESHOLD = TimeUnit.MINUTES.toMillis(1);
     }
 
     private AmazonS3 createS3Client() {
@@ -47,72 +47,75 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
         return AmazonS3ClientBuilder
                 .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withRegion(Regions.US_EAST_1)
+                .withRegion(Regions.US_EAST_1) // Regions.EU_NORTH_1) //
                 .build();
     }
 
     @Override
+    public void setSynchronizePeriod(int min) {
+        this.REFRESH_THRESHOLD = TimeUnit.MINUTES.toMillis(min);
+    }
+
+    @Override
     @PostConstruct
-    public void harmonizeDatabase() {
-        Runnable task = () -> { saveFromCloudToDB();
-            try {
-                Thread.sleep(REFRESH_THRESHOLD);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+    public void runRepeatingHarmonizeDatabase() {
+        Runnable task = () -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                synchronizeDataBaseFromCloud();
+
+                try {
+                    Thread.sleep(REFRESH_THRESHOLD);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    break;
+                }
             }
-        }; // this part for first DB filling cuz it's created in memory from scratch with every launch
-//        Runnable task = this::saveFromCloudToDB;
+        };
+
         new Thread(task).start();
-
-//        try {
-//            Thread.sleep(REFRESH_THRESHOLD);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-    }
-
-    private void someSketch() {
-
-
-
-
     }
 
 
-    private void saveFromCloudToDB() {
+    private void synchronizeDataBaseFromCloud() {
         ListObjectsRequest listObjectsRequest =
                 new ListObjectsRequest().withBucketName(bucketName);
 
-        ObjectListing os;
-        int size = 0;
-
-        HashSet<FileInfo> repoSet = new HashSet<>(repository.findAll());
+        HashSet<FileInfo> dataBaseSet = new HashSet<>(repository.findAll());
         HashSet<FileInfo> cloudTargetSet = new HashSet<>();
 
-        // TODO если нет в ДБ - удалить, если есть совпадение по имени но другое
+        int size = 0;
 
-        // help avoid limited (1000 max) bucket objects upload bug
+        saveNewInfoFromCloudToDB(listObjectsRequest, dataBaseSet, cloudTargetSet, size);
+
+        dataBaseSet.stream().filter(elementInDB -> !(cloudTargetSet.contains(elementInDB)))
+                .map(FileInfo::getId)
+                .forEach(repository::deleteById);
+
+        System.out.println("\nконтроль");
+        System.out.println(size + " <==== кол-во элементов");
+
+    }
+
+    private void saveNewInfoFromCloudToDB(ListObjectsRequest listObjectsRequest,
+                                          HashSet<FileInfo> dataBaseSet,
+                                          HashSet<FileInfo> cloudTargetSet, int size) {
+        ObjectListing os;
         do {
             os = s3client.listObjects(listObjectsRequest);
 
             size += os.getObjectSummaries().size();
 
-
             for (S3ObjectSummary objectSummary : os.getObjectSummaries()) {
                 FileInfo fileInfo = createFileInfoFromObjectSummary(objectSummary);
                 cloudTargetSet.add(fileInfo);
 
-                if (!(repoSet.contains(fileInfo))) {
+                if (!(dataBaseSet.contains(fileInfo))) {
                     repository.save(fileInfo);
                 }
             }
             listObjectsRequest.setMarker(os.getNextMarker());
 
         } while (os.isTruncated());
-
-        System.out.println("\nконтроль");
-        System.out.println(size + " <==== кол-во элементов");
-
     }
 
     private FileInfo createFileInfoFromObjectSummary(S3ObjectSummary objectSummary) {
@@ -131,6 +134,5 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
         return new java.sql.Timestamp(
                 dateToConvert.getTime()).toLocalDateTime();
     }
-
 
 }
