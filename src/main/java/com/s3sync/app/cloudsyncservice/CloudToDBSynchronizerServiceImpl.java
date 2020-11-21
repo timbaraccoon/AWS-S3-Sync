@@ -28,7 +28,7 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     private final AmazonS3 s3client;
 
     private long REFRESH_THRESHOLD;
-    private static final String bucketName = "cloudaware-test"; // "test-ruslan-bucket"; //
+    private final String bucketName = "cloudaware-test"; // "test-ruslan-bucket"; //
 
 
     @Autowired
@@ -58,7 +58,7 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
 
     @Override
     @PostConstruct
-    public void runRepeatingHarmonizeDatabase() {
+    public void runRepeatingDatabaseHarmonize() {
         Runnable task = () -> {
             while (!Thread.currentThread().isInterrupted()) {
                 synchronizeDataBaseFromCloud();
@@ -71,10 +71,8 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
                 }
             }
         };
-
         new Thread(task).start();
     }
-
 
     private void synchronizeDataBaseFromCloud() {
         ListObjectsRequest listObjectsRequest =
@@ -83,32 +81,22 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
         HashSet<FileInfo> dataBaseSet = new HashSet<>(repository.findAll());
         HashSet<FileInfo> cloudTargetSet = new HashSet<>();
 
-        int size = 0;
-
-        saveNewInfoFromCloudToDB(listObjectsRequest, dataBaseSet, cloudTargetSet, size);
-
-        dataBaseSet.stream().filter(elementInDB -> !(cloudTargetSet.contains(elementInDB)))
-                .map(FileInfo::getId)
-                .forEach(repository::deleteById);
-
-        System.out.println("\nконтроль");
-        System.out.println(size + " <==== кол-во элементов");
-
+        saveNewInfoFromCloudToDB(listObjectsRequest, dataBaseSet, cloudTargetSet);
+        removeIrrelevantFromDB(dataBaseSet, cloudTargetSet);
     }
+
 
     private void saveNewInfoFromCloudToDB(ListObjectsRequest listObjectsRequest,
                                           HashSet<FileInfo> dataBaseSet,
-                                          HashSet<FileInfo> cloudTargetSet, int size) {
+                                          HashSet<FileInfo> cloudTargetSet) {
         ObjectListing os;
         do {
             os = s3client.listObjects(listObjectsRequest);
 
-            size += os.getObjectSummaries().size();
-
             for (S3ObjectSummary objectSummary : os.getObjectSummaries()) {
+
                 FileInfo fileInfo = createFileInfoFromObjectSummary(objectSummary);
                 cloudTargetSet.add(fileInfo);
-
                 if (!(dataBaseSet.contains(fileInfo))) {
                     repository.save(fileInfo);
                 }
@@ -117,6 +105,14 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
 
         } while (os.isTruncated());
     }
+
+
+    private void removeIrrelevantFromDB(HashSet<FileInfo> dataBaseSet, HashSet<FileInfo> cloudTargetSet) {
+        dataBaseSet.stream().filter(elementInDB -> !(cloudTargetSet.contains(elementInDB)))
+                .map(FileInfo::getId)
+                .forEach(repository::deleteById);
+    }
+
 
     private FileInfo createFileInfoFromObjectSummary(S3ObjectSummary objectSummary) {
         FileInfo fileInfo = new FileInfo();

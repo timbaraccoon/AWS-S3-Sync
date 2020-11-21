@@ -16,6 +16,6 @@ public class RestExceptionHandler {
                 otherException.getMessage(),
                 System.currentTimeMillis());
 
-        return new ResponseEntity<RestControllerErrorResponse>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }

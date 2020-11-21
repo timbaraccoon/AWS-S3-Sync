@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface FileInfoRepository extends JpaRepository<FileInfo, Integer> {
 
-    public List<FileInfo> findByNameContainsAndTypeContainsAllIgnoreCase(
+    List<FileInfo> findByNameContainsAndTypeContainsAllIgnoreCase(
                                         String name, String type);
 }
