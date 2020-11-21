@@ -29,7 +29,7 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
 
     private final String accessKey = "AKIAZVYIBMMKMH74L2H6";
     private final String secretKey = "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";
-    private final String bucketName = "test-ruslan-bucket"; //"cloudaware-test"; //
+    private final String bucketName = "test-ruslan-bucket"; // "cloudaware-test"; //
     private final Regions region = Regions.EU_NORTH_1; //Regions.US_EAST_1; //
     private long delayBetweenSynchronizations = TimeUnit.MINUTES.toMillis(1);
 
