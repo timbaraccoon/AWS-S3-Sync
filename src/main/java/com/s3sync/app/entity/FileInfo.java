@@ -1,10 +1,12 @@
 package com.s3sync.app.entity;
 
+import com.amazonaws.services.s3.model.Grant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table
@@ -17,21 +19,38 @@ public class FileInfo {
     @Column(name = "id")
     private int id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "type", nullable = false)
+    @Column(name = "type", length = 50, nullable = false)
     private String type;
 
     @Column(name = "last_modified", nullable = false)
-    private LocalDateTime lastModified;
+    private Date lastModified;
+
+    @Column(name = "object_version", nullable = false, length = 50)
+    private String objectVersion;
 
     @Column(name = "size", nullable = false)
     private long size;
 
-    @Column(name = "storage_class", nullable = false)
+    @ElementCollection
+    @CollectionTable(name = "access")
+    @OrderColumn
+    @Column(name = "acl", length = 2000)
+    private List<Grant> acl;
+
+    @Column(name = "storage_class", nullable = false,  length = 50)
     private String storageClass;
 
+    @Column(name = "confirmed")
+    private boolean confirmed;
+
+    // TODO решить как хранить права доступа, скорее всего енам также, но содать метод для отображения строки
+
+
+
+    // TODO обновить контракты
 
     @Override
     public boolean equals(Object o) {
@@ -57,15 +76,4 @@ public class FileInfo {
         return result;
     }
 
-    @Override
-    public String toString() {
-        return "FileInfo{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", type='" + type + '\'' +
-                ", lastModified=" + lastModified +
-                ", size=" + size +
-                ", storageClass='" + storageClass + '\'' +
-                '}';
-    }
 }
