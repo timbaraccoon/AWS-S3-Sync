@@ -31,7 +31,7 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     private final String bucketName = "cloudaware-test";
     private final Regions region = Regions.US_EAST_1;
     private Date lastDatabaseUpdate;
-    AtomicInteger cloudObjectsCounter;
+    private final AtomicInteger cloudObjectsCounter;
 
 
     @Autowired
@@ -91,7 +91,7 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
             saveNewDataToDB(newDataToSave);
 
             listRequest.setKeyMarker(vs.getNextKeyMarker());
-            
+
         } while (vs.isTruncated());
     }
 
@@ -164,7 +164,7 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
         fileInfo.setType(FilenameUtils.getExtension(versionSummary.getKey()));
         fileInfo.setLastModified(versionSummary.getLastModified());
         fileInfo.setSize(versionSummary.getSize());
-        fileInfo.setAcl(getObjectAcl(versionSummary.getKey()));
+        fileInfo.setAclGrants(getObjectAcl(versionSummary.getKey()));
         fileInfo.setStorageClass(versionSummary.getStorageClass());
 
         return fileInfo;

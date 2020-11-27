@@ -47,9 +47,10 @@
             <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th>Last Modified</th>
                 <th>Size</th>
-                <th>Storage Class</th>
+                <th>Last Modified</th>
+                <th>Object Version</th>
+                <th>ACL</th>
             </tr>
         </thead>
 
@@ -57,9 +58,17 @@
             <tr th:each="fileInfo : ${fileInfoList}">
                 <td th:text="${fileInfo.name}" />
                 <td th:text="${fileInfo.type}" />
-                <td th:text="${fileInfo.lastModified}" />
                 <td th:text="${fileInfo.size}" />
-                <td th:text="${fileInfo.storageClass}" />
+                <td th:text="${fileInfo.lastModified}" />
+                <td th:text="${fileInfo.objectVersion}" />
+
+                <td>
+                    <a th:href="@{/api/showACL(fileInfoId=${fileInfo.id})}"
+                       class="btn btn-success btn-sm btn-block">
+                        showACL
+                    </a>
+                </td>
+<!--                <td th:text="${fileInfo.getACLtoString()}" />-->
 
             </tr>
         </tbody>

@@ -8,5 +8,11 @@ public interface FileInfoFromDBService {
 
     List<FileInfo> findAll();
 
+    List<FileInfo> findAllByLastModifiedOrder();
+
+    List<FileInfo> findAllByNameOrder();
+
     List<FileInfo> searchBy(String name, String type);
+
+    FileInfo findById(int id);
 }

@@ -37,20 +37,14 @@ public class FileInfo {
     @ElementCollection
     @CollectionTable(name = "access")
     @OrderColumn
-    @Column(name = "acl", length = 2000)
-    private List<Grant> acl;
+    @Column(name = "acl_grants", length = 2000)
+    private List<Grant> aclGrants;
 
     @Column(name = "storage_class", nullable = false,  length = 50)
     private String storageClass;
 
     @Column(name = "confirmed")
     private boolean confirmed;
-
-    // TODO решить как хранить права доступа, скорее всего енам также, но содать метод для отображения строки
-
-
-
-    // TODO обновить контракты
 
     @Override
     public boolean equals(Object o) {
@@ -74,6 +68,20 @@ public class FileInfo {
         result = 31 * result + (int) (size ^ (size >>> 32));
         result = 31 * result + storageClass.hashCode();
         return result;
+    }
+
+    public String getACLtoString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (Grant grant : aclGrants) {
+            sb.append(grant.getGrantee().getIdentifier())
+                    .append(" : ")
+                    .append(grant.getPermission())
+                    .append("\n");
+        }
+        sb.delete(sb.length() - 1, sb.length());
+
+        return sb.toString();
     }
 
 }

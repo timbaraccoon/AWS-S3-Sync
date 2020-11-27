@@ -6,11 +6,11 @@ import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Api(tags = {"Controller for mapping Info from AWS S3 Bucket to HTML"})
@@ -27,7 +27,7 @@ public class FileInfoController {
 
     @GetMapping("/list")
     public String getFileInfoList(Model model) {
-        List<FileInfo> fileInfoList = serviceDB.findAll();
+        List<FileInfo> fileInfoList = serviceDB.findAllByNameOrder();
         model.addAttribute("fileInfoList", fileInfoList);
 
         return "api/list";
@@ -38,14 +38,23 @@ public class FileInfoController {
                          @RequestParam("type") String type,
                          Model theModel) {
 
-        if (StringUtils.hasText(name) && StringUtils.hasText(type)) {
+        if (name.trim().isEmpty() && type.trim().isEmpty()) {
+            return "redirect:/api/list";
+        } else {
             List<FileInfo> filterFileInfoList = serviceDB.searchBy(name, type);
+            filterFileInfoList.sort(Comparator.comparing(FileInfo::getName));
             theModel.addAttribute("fileInfoList", filterFileInfoList);
 
             return "api/list";
         }
-        else {
-            return "redirect:/api/list";
-        }
+
+    }
+
+    @GetMapping("/showACL")
+    public String showACL(@RequestParam("fileInfoId") int id, Model model) {
+        FileInfo fileInfo = serviceDB.findById(id);
+        model.addAttribute("fileInfo", fileInfo);
+
+        return "api/showACL";
     }
 }

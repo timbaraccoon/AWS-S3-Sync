@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 public interface FileInfoRepository extends JpaRepository<FileInfo, Integer> {
 
@@ -31,5 +30,9 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Integer> {
 
     @Transactional
     long deleteByConfirmed(boolean confirmed);
+
+    List<FileInfo> findAllByOrderByLastModifiedDesc();
+
+    List<FileInfo> findAllByOrderByNameAsc();
 
 }

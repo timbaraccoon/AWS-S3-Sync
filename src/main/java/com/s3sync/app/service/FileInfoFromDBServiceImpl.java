@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FileInfoFromDBServiceImpl implements FileInfoFromDBService {
@@ -25,5 +26,28 @@ public class FileInfoFromDBServiceImpl implements FileInfoFromDBService {
     @Override
     public List<FileInfo> searchBy(String name, String type) {
         return repository.findByNameContainsAndTypeContainsAllIgnoreCase(name, type);
+    }
+
+    @Override
+    public FileInfo findById(int id) {
+        Optional<FileInfo> result = repository.findById(id);
+        FileInfo fileInfo;
+
+        if (result.isPresent()) {
+            fileInfo = result.get();
+        } else {
+            throw new RuntimeException("Can't find Object with id: " + id);
+        }
+        return fileInfo;
+    }
+
+    @Override
+    public List<FileInfo> findAllByLastModifiedOrder() {
+        return repository.findAllByOrderByLastModifiedDesc();
+    }
+
+    @Override
+    public List<FileInfo> findAllByNameOrder() {
+        return repository.findAllByOrderByNameAsc();
     }
 }
