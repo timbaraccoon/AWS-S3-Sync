@@ -43,8 +43,8 @@ public class CloudToDBSynchronizerServiceImpl implements CloudToDBSynchronizerSe
     }
 
     private AmazonS3 createS3Client() {
-        String accessKey = "AKIAZVYIBMMKMH74L2H6";
-        String secretKey = "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";
+        String accessKey = "acckey here";
+        String secretKey = "secrkey here";
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         return AmazonS3ClientBuilder
